@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import sympy
 import random
 
 class UOCRandom:
@@ -36,7 +37,27 @@ class UOCRandom:
 
 # --- IMPLEMENTATION GOES HERE -----------------------------------------------
 #  Student helpers (functions, constants, etc.) can be defined here, if needed
+uoc_random = UOCRandom()
 
+def generate_p(L: int, q: int) -> int:
+    """
+    Generates a random p prime number, between 2^(L-1) and 2^L
+    :param L: L value of the DSA algorithm
+    :returns: random p prime number, between 2^(L-1) and 2^L
+    """
+    a, b = pow(2, L-1), pow(2, L)
+    while True:
+        k = uoc_random.get(a, b) // q
+        p = k * q + 1
+        if sympy.isprime(p):
+            return p
+
+
+def generate_g(p: int, q: int) -> int:
+    for h in range(2, p):
+        g = pow(h, (p-1) // q, p)
+        if g > 1:
+            return g
 
 
 
@@ -54,10 +75,16 @@ def uoc_dsa_genkey(L, N):
     result = [[], []]
 
     #### IMPLEMENTATION GOES HERE ####
+    q = sympy.randprime(pow(2, N-1) + 1, pow(2, N))
+    p = generate_p(L, q)
+    g = generate_g(p, q)
+    x = uoc_random.get(1, q)
+    y = pow(g, x, p)
 
-    
+    result = [[p, q, g, y],[p, q, g, x]]
+
     ##################################
-    
+
     return result
 
 
@@ -71,7 +98,14 @@ def uoc_dsa_sign(privkey, message):
     result = [0, 0]
         
     #### IMPLEMENTATION GOES HERE ####
-    
+    p, q, g, x = privkey
+
+    k = uoc_random.get(1, q-1)
+    r = pow(g, k, p) % q
+    k_inv = sympy.mod_inverse(k, q)
+    s = (k_inv * (message + x *r)) % q
+
+    result = [r, s]
 
     ##################################
     
@@ -90,7 +124,20 @@ def uoc_dsa_verify(pubkey, message, signature):
     result = None
    
     #### IMPLEMENTATION GOES HERE ####
-    
+    p, q, g, y = pubkey
+    r, s = signature
+
+    if 0 >= r or 0 >= s:
+        return False
+
+    w = sympy.mod_inverse(s, q)
+    u1 = message * w % q
+    u2 = r * w % q
+    gu1 = pow(g, u1, p)
+    yu2 = pow(y, u2, p)
+    v = (gu1 * yu2 % p) % q
+
+    result = v == r % q
         
     ##################################  
 
