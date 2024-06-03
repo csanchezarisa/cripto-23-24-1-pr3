@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import itertools
+import hashlib as hl
 import sympy as sp
 import random
 
@@ -60,6 +61,18 @@ def generate_g(p: int, q: int) -> int:
             return g
 
 
+def get_least_significant_bits(hex_hash: str, num_bits: int) -> int:
+    """
+
+    Args:
+        hex_hash:
+        num_bits:
+
+    Returns:
+
+    """
+
+
 
 
 
@@ -75,6 +88,7 @@ def uoc_dsa_genkey(L, N):
     result = [[], []]
 
     #### IMPLEMENTATION GOES HERE ####
+
     q = sp.randprime(pow(2, N-1) + 1, pow(2, N))
     p = generate_p(L, q)
     g = generate_g(p, q)
@@ -98,6 +112,7 @@ def uoc_dsa_sign(privkey, message):
     result = [0, 0]
         
     #### IMPLEMENTATION GOES HERE ####
+
     p, q, g, x = privkey
 
     k = uoc_random.get(1, q-1)
@@ -124,6 +139,7 @@ def uoc_dsa_verify(pubkey, message, signature):
     result = None
    
     #### IMPLEMENTATION GOES HERE ####
+
     p, q, g, y = pubkey
     r, s = signature
 
@@ -138,7 +154,7 @@ def uoc_dsa_verify(pubkey, message, signature):
     v = (gu1 * yu2 % p) % q
 
     result = v == r % q
-        
+
     ##################################  
 
     return result
@@ -155,7 +171,9 @@ def uoc_sha1(message, num_bits):
     result = ''
     
     #### IMPLEMENTATION GOES HERE ####
-    
+
+    calculated_hash = hl.sha1(str(message).encode('utf-8')).hexdigest()
+    result = calculated_hash[-(num_bits // 4):]
     
     ##################################  
     
@@ -174,7 +192,18 @@ def uoc_sha1_find_preimage(message, num_bits):
     preimg = ""
     
     #### IMPLEMENTATION GOES HERE ####
-    
+
+    original_hash = hl.sha1(str(message).encode('utf-8')).hexdigest()
+    original_truncated_hash = original_hash[-(num_bits // 4):]
+
+    for i in itertools.count():
+        new_message = message + str(i)
+        new_hash = hl.sha1(new_message.encode()).hexdigest()
+        new_truncated_hash = new_hash[-(num_bits // 4):]
+
+        if new_truncated_hash == original_truncated_hash and new_message != message:
+            preimg = new_message
+            break
          
     ##################################     
         
@@ -191,7 +220,19 @@ def uoc_sha1_collisions(num_bits):
     collisions = (None, None)
     
     #### IMPLEMENTATION GOES HERE ####
-    
+
+    hashes: dict[str, str] = dict()
+    for i in itertools.count():
+        message = f'random message {i}'
+
+        calculated_hash = hl.sha1(message.encode('utf-8')).hexdigest()
+        truncated_hash = calculated_hash[-(num_bits // 4):]
+
+        if truncated_hash in hashes:
+            collisions = (message, hashes[truncated_hash])
+            break
+        else:
+            hashes[truncated_hash] = message
     
     ##################################   
     
