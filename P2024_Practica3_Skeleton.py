@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import itertools
 import hashlib as hl
-import sympy as sp
+import itertools
 import random
+
+import sympy as sp
+
 
 class UOCRandom:
     """
@@ -61,20 +63,14 @@ def generate_g(p: int, q: int) -> int:
             return g
 
 
-def get_least_significant_bits(hex_hash: str, num_bits: int) -> int:
+def get_least_significant_bits(hex_hash: str, num_bits: int) -> str:
     """
-
-    Args:
-        hex_hash:
-        num_bits:
-
-    Returns:
-
+    Returns the least significant bits from a hexadecimal hash.
+    :param hex_hash: hash in hexadecimal format.
+    :param num_bits: number of least significant bits to truncate the hash
+    :returns: a truncated hash with the last significant bits
     """
-
-
-
-
+    return hex_hash[-(num_bits // 4):]
 
 
 def uoc_dsa_genkey(L, N):
@@ -173,7 +169,7 @@ def uoc_sha1(message, num_bits):
     #### IMPLEMENTATION GOES HERE ####
 
     calculated_hash = hl.sha1(str(message).encode('utf-8')).hexdigest()
-    result = calculated_hash[-(num_bits // 4):]
+    result = get_least_significant_bits(calculated_hash, num_bits)
     
     ##################################  
     
@@ -194,12 +190,12 @@ def uoc_sha1_find_preimage(message, num_bits):
     #### IMPLEMENTATION GOES HERE ####
 
     original_hash = hl.sha1(str(message).encode('utf-8')).hexdigest()
-    original_truncated_hash = original_hash[-(num_bits // 4):]
+    original_truncated_hash = get_least_significant_bits(original_hash, num_bits)
 
     for i in itertools.count():
         new_message = message + str(i)
         new_hash = hl.sha1(new_message.encode()).hexdigest()
-        new_truncated_hash = new_hash[-(num_bits // 4):]
+        new_truncated_hash = get_least_significant_bits(new_hash, num_bits)
 
         if new_truncated_hash == original_truncated_hash and new_message != message:
             preimg = new_message
@@ -226,7 +222,7 @@ def uoc_sha1_collisions(num_bits):
         message = f'random message {i}'
 
         calculated_hash = hl.sha1(message.encode('utf-8')).hexdigest()
-        truncated_hash = calculated_hash[-(num_bits // 4):]
+        truncated_hash = get_least_significant_bits(calculated_hash, num_bits)
 
         if truncated_hash in hashes:
             collisions = (message, hashes[truncated_hash])
