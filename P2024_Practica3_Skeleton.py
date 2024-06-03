@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sympy
+import sympy as sp
 import random
 
 class UOCRandom:
@@ -49,7 +49,7 @@ def generate_p(L: int, q: int) -> int:
     while True:
         k = uoc_random.get(a, b) // q
         p = k * q + 1
-        if sympy.isprime(p):
+        if sp.isprime(p):
             return p
 
 
@@ -75,7 +75,7 @@ def uoc_dsa_genkey(L, N):
     result = [[], []]
 
     #### IMPLEMENTATION GOES HERE ####
-    q = sympy.randprime(pow(2, N-1) + 1, pow(2, N))
+    q = sp.randprime(pow(2, N-1) + 1, pow(2, N))
     p = generate_p(L, q)
     g = generate_g(p, q)
     x = uoc_random.get(1, q)
@@ -102,8 +102,8 @@ def uoc_dsa_sign(privkey, message):
 
     k = uoc_random.get(1, q-1)
     r = pow(g, k, p) % q
-    k_inv = sympy.mod_inverse(k, q)
-    s = (k_inv * (message + x *r)) % q
+    k_inv = sp.mod_inverse(k, q)
+    s = (k_inv * (message + x * r)) % q
 
     result = [r, s]
 
@@ -130,7 +130,7 @@ def uoc_dsa_verify(pubkey, message, signature):
     if 0 >= r or 0 >= s:
         return False
 
-    w = sympy.mod_inverse(s, q)
+    w = sp.mod_inverse(s, q)
     u1 = message * w % q
     u2 = r * w % q
     gu1 = pow(g, u1, p)
