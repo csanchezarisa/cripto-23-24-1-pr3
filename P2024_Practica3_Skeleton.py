@@ -37,11 +37,10 @@ class UOCRandom:
         return random.randint(min_value, max_value)
 
 
-
-
 # --- IMPLEMENTATION GOES HERE -----------------------------------------------
 #  Student helpers (functions, constants, etc.) can be defined here, if needed
 uoc_random = UOCRandom()
+
 
 def generate_p(L: int, q: int) -> int:
     """
@@ -58,6 +57,12 @@ def generate_p(L: int, q: int) -> int:
 
 
 def generate_g(p: int, q: int) -> int:
+    """
+    Generates a g value
+    :param p: DSA key p value
+    :param q: DSA key q value
+    :returns: g value
+    """
     for h in range(2, p):
         g = pow(h, (p-1) // q, p)
         if g > 1:
@@ -256,7 +261,6 @@ def uoc_dsa_extract_private_key(pubkey, m1, sig1, m2, sig2):
     return privkey
 
 
-
 def uoc_dsa_deterministic_sign(privkey, message):
     """
     EXERCISE 3.2: Sign a message using DSA
@@ -286,16 +290,3 @@ def uoc_dsa_deterministic_sign(privkey, message):
     ##################################
     
     return result
-
-
-
-
-
-
-
-
-
-
-
-
-
