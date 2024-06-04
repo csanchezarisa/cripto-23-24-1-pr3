@@ -3,6 +3,7 @@
 import hashlib as hl
 import itertools
 import random
+import uuid
 
 import sympy as sp
 
@@ -189,15 +190,13 @@ def uoc_sha1_find_preimage(message, num_bits):
     
     #### IMPLEMENTATION GOES HERE ####
 
-    original_hash = hl.sha1(str(message).encode('utf-8')).hexdigest()
-    original_truncated_hash = get_least_significant_bits(original_hash, num_bits)
+    original_hash = uoc_sha1(message, num_bits)
 
     for i in itertools.count():
         new_message = message + str(i)
-        new_hash = hl.sha1(new_message.encode()).hexdigest()
-        new_truncated_hash = get_least_significant_bits(new_hash, num_bits)
+        new_hash = uoc_sha1(new_message, num_bits)
 
-        if new_truncated_hash == original_truncated_hash and new_message != message:
+        if new_hash == original_hash and new_message != message:
             preimg = new_message
             break
          
@@ -217,25 +216,13 @@ def uoc_sha1_collisions(num_bits):
     
     #### IMPLEMENTATION GOES HERE ####
 
-    hashes: dict[str, str] = dict()
-    for i in itertools.count():
-        message = f'random message {i}'
-
-        calculated_hash = hl.sha1(message.encode('utf-8')).hexdigest()
-        truncated_hash = get_least_significant_bits(calculated_hash, num_bits)
-
-        if truncated_hash in hashes:
-            collisions = (message, hashes[truncated_hash])
-            break
-        else:
-            hashes[truncated_hash] = message
+    message = str(uuid.uuid4())
+    pre_image = uoc_sha1_find_preimage(message, num_bits)
+    collisions = (message, pre_image)
     
     ##################################   
     
     return collisions
-
-
-
 
 
 def uoc_dsa_extract_private_key(pubkey, m1, sig1, m2, sig2):
@@ -253,6 +240,16 @@ def uoc_dsa_extract_private_key(pubkey, m1, sig1, m2, sig2):
 
     # --- IMPLEMENTATION GOES HERE ---
 
+    p, q, g, y = pubkey
+    r1, s1 = sig1
+    r2, s2 = sig2
+
+    s_inv = sp.mod_inverse(s1 - s2, q)
+    k = ((m1 - m2) * s_inv) % q
+    r_inv = sp.mod_inverse(r1, q)
+    x = ((s1 * k - m1) * r_inv) % q
+
+    privkey = [p, q, g, x]
 
     # --------------------------------
 
@@ -271,6 +268,20 @@ def uoc_dsa_deterministic_sign(privkey, message):
         
     #### IMPLEMENTATION GOES HERE ####
 
+    p, q, g, x = privkey
+
+    priv_key_hash = uoc_sha1(x, 64)
+    message_hash = uoc_sha1(message, 64)
+
+    seed = int(priv_key_hash + message_hash, 16)
+    uoc_random = UOCRandom(seed)
+
+    k = uoc_random.get(1, q - 1)
+    r = pow(g, k, p) % q
+    k_inv = sp.mod_inverse(k, q)
+    s = (k_inv * (message + x * r)) % q
+
+    result = [r, s]
 
     ##################################
     
