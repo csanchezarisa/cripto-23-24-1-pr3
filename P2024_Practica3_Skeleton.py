@@ -249,8 +249,8 @@ def uoc_dsa_extract_private_key(pubkey, m1, sig1, m2, sig2):
     r1, s1 = sig1
     r2, s2 = sig2
 
-    s_inv = sp.mod_inverse(s1 - s2, q)
-    k = ((m1 - m2) * s_inv) % q
+    s_inv = sp.mod_inverse(s2 - s1, q)
+    k = ((m2 - m1) * s_inv) % q
     r_inv = sp.mod_inverse(r1, q)
     x = ((s1 * k - m1) * r_inv) % q
 
