@@ -48,10 +48,16 @@ def generate_p(L: int, q: int) -> int:
     :param L: L value of the DSA algorithm
     :returns: random p prime number, between 2^(L-1) and 2^L
     """
+    # Define the borders for the range
     a, b = pow(2, L-1), pow(2, L)
     while True:
+        # Get a random valid multiple for q
         k = uoc_random.get(a, b) // q
+
+        # Multiply per q and sum 1 (the inverse operation was p - 1)
         p = k * q + 1
+
+        # Check if prime, then return, else try again
         if sp.isprime(p):
             return p
 
@@ -63,7 +69,9 @@ def generate_g(p: int, q: int) -> int:
     :param q: DSA key q value
     :returns: g value
     """
+    # Try h values where 1 < h < p
     for h in range(2, p):
+        # Looks for a generator of q subgroup
         g = pow(h, (p-1) // q, p)
         if g > 1:
             return g
@@ -91,10 +99,20 @@ def uoc_dsa_genkey(L, N):
 
     #### IMPLEMENTATION GOES HERE ####
 
+    # The generation of the DSA key is done by reversing the order of the module notes
+    # First generate a random q prime
     q = sp.randprime(pow(2, N-1) + 1, pow(2, N))
+
+    # Using q, generate a random prime multiple q
     p = generate_p(L, q)
+
+    # Generate a 1 < g < p value generator of q subgroup
     g = generate_g(p, q)
+
+    # Get random private key x value
     x = uoc_random.get(1, q)
+
+    # Calculate y value
     y = pow(g, x, p)
 
     result = [[p, q, g, y],[p, q, g, x]]
@@ -117,8 +135,13 @@ def uoc_dsa_sign(privkey, message):
 
     p, q, g, x = privkey
 
-    k = uoc_random.get(1, q-1)
+    # First generate a random k  number
+    k = uoc_random.get(1, q - 1)
+
+    # Calculate r value
     r = pow(g, k, p) % q
+
+    # Calculate s value. First we need to get k inverse value
     k_inv = sp.mod_inverse(k, q)
     s = (k_inv * (message + x * r)) % q
 
@@ -148,13 +171,21 @@ def uoc_dsa_verify(pubkey, message, signature):
     if 0 >= r or 0 >= s:
         return False
 
+    # Calculate w as s mod inverse
     w = sp.mod_inverse(s, q)
+
+    # Calculate u values
     u1 = message * w % q
     u2 = r * w % q
+
+    # Pow and module of u values
     gu1 = pow(g, u1, p)
     yu2 = pow(y, u2, p)
+
+    # Calculate v value
     v = (gu1 * yu2 % p) % q
 
+    # Sign comparison
     result = v == r % q
 
     ##################################  
@@ -174,7 +205,10 @@ def uoc_sha1(message, num_bits):
     
     #### IMPLEMENTATION GOES HERE ####
 
+    # Get message hash
     calculated_hash = hl.sha1(str(message).encode('utf-8')).hexdigest()
+
+    # Get least significant hex digits
     result = get_least_significant_bits(calculated_hash, num_bits)
     
     ##################################  
@@ -195,12 +229,16 @@ def uoc_sha1_find_preimage(message, num_bits):
     
     #### IMPLEMENTATION GOES HERE ####
 
+    # Store original message hash
     original_hash = uoc_sha1(message, num_bits)
 
+    # Generates a new message using the original one as base
+    # original_message + iteration_number
     for i in itertools.count():
         new_message = message + str(i)
         new_hash = uoc_sha1(new_message, num_bits)
 
+        # Compare the two hashes
         if new_hash == original_hash and new_message != message:
             preimg = new_message
             break
@@ -221,8 +259,13 @@ def uoc_sha1_collisions(num_bits):
     
     #### IMPLEMENTATION GOES HERE ####
 
+    # Generate a random message using uuid library
     message = str(uuid.uuid4())
+
+    # Use uoc_sha1_find_preimage to find a preimage
     pre_image = uoc_sha1_find_preimage(message, num_bits)
+
+    # Return collisions
     collisions = (message, pre_image)
     
     ##################################   
@@ -249,9 +292,16 @@ def uoc_dsa_extract_private_key(pubkey, m1, sig1, m2, sig2):
     r1, s1 = sig1
     r2, s2 = sig2
 
+    # First calculate (s2 - s1) mod inverse q
     s_inv = sp.mod_inverse(s2 - s1, q)
+
+    # Using s_inv, calculate k value
     k = ((m2 - m1) * s_inv) % q
+
+    # Calculate r mod inverse q
     r_inv = sp.mod_inverse(r1, q)
+
+    # Using r_inv, calculate x
     x = ((s1 * k - m1) * r_inv) % q
 
     privkey = [p, q, g, x]
@@ -274,12 +324,15 @@ def uoc_dsa_deterministic_sign(privkey, message):
 
     p, q, g, x = privkey
 
+    # Get private key and message hashes
     priv_key_hash = uoc_sha1(x, 64)
     message_hash = uoc_sha1(message, 64)
 
+    # Initialise UOCRandom with seed
     seed = int(priv_key_hash + message_hash, 16)
     uoc_random = UOCRandom(seed)
 
+    # Generate random k with seed and apply same process as uoc_dsa_sign
     k = uoc_random.get(1, q - 1)
     r = pow(g, k, p) % q
     k_inv = sp.mod_inverse(k, q)
